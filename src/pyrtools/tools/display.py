@@ -226,7 +226,7 @@ def reshape_axis(ax, axis_size_pix):
     return ax
 
 
-def colormap_range(image, vrange= 'indep1', cmap=None, n_rows = None, n_cols = None):
+def colormap_range(image, vrange= 'indep1', cmap=None, n_cols = None):
     """Find the appropriate ranges for colormaps of provided images
 
     Arguments
@@ -257,7 +257,7 @@ def colormap_range(image, vrange= 'indep1', cmap=None, n_rows = None, n_cols = N
                      the display intensity range. For example: vmin is the 10th
                      percentile image value minus 1/8 times the difference
                      between the 90th and 10th percentile
-  * `'auto[X]row'`: each row of the figure has the same vmin/vmax, which are 
+        * `'auto[X]row'`: each row of the figure has the same vmin/vmax, which are 
                           computed using the auto[X] methods described above Eg. 
                           `'auto1row'`, `'auto2row'`, or `'auto3row'`Ie. min/max,
                           mean minus/plus 2 std dev, or percentile statistics are 
@@ -278,6 +278,11 @@ def colormap_range(image, vrange= 'indep1', cmap=None, n_rows = None, n_cols = N
         * `'indep3'`: each image has an independent vmin/vmax, chosen so that
                      the 10th/90th percentile values map to the 10th/90th
                      percentile intensities.
+    cmap : matplotlib colormap, optional
+        colormap to use when showing these images. If None, will pick RdBu_r if vrange is some variant of auto0 or indep0, else will pick gray.
+    n_cols : `int`
+        number of columns in the figure. 
+
     Returns
     -------
     vrange_list : `list`
@@ -791,7 +796,7 @@ def imshow(image, vrange='indep1', zoom=1, title='', col_wrap=None, ax=None,
     # get the figure and axes created
     fig, axes, n_cols, n_rows = _setup_figure(ax, col_wrap, image, zoom, max_shape, vert_pct)
 
-    vrange_list, cmap = colormap_range(image=image, vrange=vrange, cmap=cmap, n_rows = n_rows, n_cols = n_cols)
+    vrange_list, cmap = colormap_range(image=image, vrange=vrange, cmap=cmap, n_cols = n_cols)
 
     for im, a, r, t, z in zip(image, axes, vrange_list, title, zooms):
         _showIm(im, a, r, z, t, cmap, **kwargs)
@@ -908,7 +913,7 @@ def animshow(video, framerate=2., as_html5=True, repeat=False,
     zooms, max_shape = _check_zooms(video, zoom, contains_rgb, video=True)
     fig, axes,  n_cols, n_rows = _setup_figure(ax, col_wrap, video, zoom, max_shape, vert_pct)
     vrange_list, cmap = colormap_range(image=video, vrange=vrange,
-                                       cmap=cmap, n_rows = n_rows, n_cols = n_cols)
+                                       cmap=cmap, n_cols = n_cols)
 
     first_image = [v[0] for v in video]
     for im, a, r, t, z in zip(first_image, axes, vrange_list, title, zooms):
@@ -959,30 +964,32 @@ def pyrshow(pyr_coeffs, is_complex=False, vrange='indep1', col_wrap=None, zoom=1
         values are specified by the 2-tuples in the list ordered from first image to last. If a string:
 
         * `'auto/auto1'`: all images have same vmin/vmax, which are the minimum/maximum values
-                          across all images
+                        across all images
         * `'auto2'`: all images have same vmin/vmax, which are the mean (across all images) minus/
-                     plus 2 std dev (across all images)
+                    plus 2 std dev (across all images)
         * `'auto3'`: all images have same vmin/vmax, chosen so as to map the 10th/90th percentile
-                     values to the 10th/90th percentile of the display intensity range. For
-                     example: vmin is the 10th percentile image value minus 1/8 times the
-                     difference between the 90th and 10th percentile
+                    values to the 10th/90th percentile of the display intensity range. For
+                    example: vmin is the 10th percentile image value minus 1/8 times the
+                    difference between the 90th and 10th percentile
         * `'auto[X]row'`: each row of the figure has the same vmin/vmax, which are 
-                          computed using the auto[X] methods described above Eg. 
-                          `'auto1row'`, `'auto2row'`, or `'auto3row'`Ie. min/max,
-                          mean minus/plus 2 std dev, or percentile statistics are 
-                          computed across all images in a given row, and those 
-                          values are used as the vmin/vmax for all images in that row. 
-                          High pass and low pass residuals have independent vmin/vmax
-                          based on min/max of the residual image itself.
+                        computed using the auto[X] methods described above Eg. 
+                        `'auto1row'`, `'auto2row'`, or `'auto3row'`Ie. min/max,
+                        mean minus/plus 2 std dev, or percentile statistics are 
+                        computed across all images in a given row, and those 
+                        values are used as the vmin/vmax for all images in that row. 
+                        High pass and low pass residuals have independent vmin/vmax
+                        based on min/max of the residual image itself
         * `'auto[X]col'`: each column of the figure has the same vmin/vmax, which are 
-                          computed using the auto[X] methods described above Eg. 
-                          `'auto1col'`, `'auto2col'`, or `'auto3col'`. 
+                        computed using the auto[X] methods described above Eg. 
+                        `'auto1col'`, `'auto2col'`, or `'auto3col'`. Note for complex pyramids, 
+                        the vmin/vmax for each column is computed across both the real and 
+                        imaginary parts
         * `'indep1'`: each image has an independent vmin/vmax, which are their minimum/maximum
-                      values
+                    values
         * `'indep2'`: each image has an independent vmin/vmax, which is their mean minus/plus 2
-                      std dev
+                    std dev
         * `'indep3'`: each image has an independent vmin/vmax, chosen so that the 10th/90th
-                      percentile values map to the 10th/90th percentile intensities.
+                    percentile values map to the 10th/90th percentile intensities.
     col_wrap : `int` or None
         Only usable when the pyramid is one-dimensional (e.g., Gaussian or Laplacian Pyramid),
         otherwise the column wrap is determined by the number of bands. If not None, how many axes
@@ -1019,8 +1026,19 @@ def pyrshow(pyr_coeffs, is_complex=False, vrange='indep1', col_wrap=None, zoom=1
     # not sure about scope here, so we make sure to copy the
     # pyr_coeffs dictionary.
     imgs, highpass, lowpass = convert_pyr_coeffs_to_pyr(pyr_coeffs.copy())
-    imgs = [i.squeeze() for i in imgs]
+  
+    imgs_formatted = imgs
 
+    # for purposes of determining vrange we want the same vmin and vmax for the real and imaginary parts of the complex images, 
+    # so we concatenate them together and compute the min and max across both parts.
+    if is_complex:
+        imgs_formatted = [np.concatenate([im.real.ravel(), im.imag.ravel()]) for im in imgs]
+
+    vrange_list, cmap = colormap_range(image=imgs_formatted, vrange=vrange, n_cols=num_orientations)
+    if is_complex: 
+        vrange_list = [v for v in vrange_list for _ in range(2)]
+
+  
     if is_complex: 
         # Make sure image is a list, do some preliminary checks
         image_converted = _convert_signal_to_list(imgs)
@@ -1035,41 +1053,6 @@ def pyrshow(pyr_coeffs, is_complex=False, vrange='indep1', col_wrap=None, zoom=1
         plot_complex = kwargs.get("plot_complex", "rectangular")
         imgs, titles, _  = _process_signal(image_converted, titles, plot_complex)
 
-    if 'row' in vrange:
-        vrange_list = []
-        for i in range(math.ceil(len(imgs) / num_orientations)):
-            vr, _ = colormap_range(
-                imgs[num_orientations * i : num_orientations * (i + 1)],  vrange.split('row')[0]
-            )
-            vrange_list.extend(vr)
-           
-
-    ## If complex need to collect both imaginary and real parts of the coefficients for each "column" 
-    # (i.e. each orientation) to compute the colormap range across both real and imaginary parts, 
-    # so we loop through orientations and collect the corresponding real and imaginary parts
-    #  of the coefficients for each orientation together to compute the colormap range for that column.
-    #  If not complex, then we just loop through orientations and collect the coefficients for each orientation 
-    # together to compute the colormap range for that column.      
-
-
-    elif 'col' in vrange:   
-        vrange_list = [None] * len(imgs)
-        if not is_complex:
-            for j in range(num_orientations):
-                col_images = [imgs[i] for i in range(j, len(imgs), num_orientations)]
-                vr, _ = colormap_range(col_images, vrange.split('col')[0])
-                for k, i in enumerate(range(j, len(imgs), num_orientations)):
-                    vrange_list[i] = vr[k]
-        else:
-            for j in range(0, num_orientations * 2, 2):
-                col_images = []
-                for i in range(j, len(imgs), num_orientations * 2):
-                    col_images.extend([imgs[i], imgs[i + 1]])
-                vr, _ = colormap_range(col_images, vrange.split('col')[0])
-                for k, i in enumerate(range(j, len(imgs), num_orientations * 2)):
-                    vrange_list[i] = vr[k]
-                    vrange_list[i + 1] = vr[k]
-    
     # we can similarly grab the labels for height and band
     # from the keys in this pyramid coefficients dictionary
     pyr_coeffs_keys = [k for k in pyr_coeffs.keys() if isinstance(k, tuple)]
@@ -1079,20 +1062,16 @@ def pyrshow(pyr_coeffs, is_complex=False, vrange='indep1', col_wrap=None, zoom=1
         if highpass is not None:
             titles += ["residual highpass"]
             imgs.append(highpass)
-            if 'row' in vrange or 'col' in vrange:
-                vrange_list.append([highpass.min(), highpass.max()])
+            vrange_list.append([highpass.min(), highpass.max()])
         if lowpass is not None:
             titles += ["residual lowpass"]
             imgs.append(lowpass)
-            if 'row' in vrange or 'col' in vrange:
-                vrange_list.append([lowpass.min(), lowpass.max()])
+            vrange_list.append([lowpass.min(), lowpass.max()])
     if col_wrap_new is not None and col_wrap_new != 1:
         if col_wrap is None:
             col_wrap = col_wrap_new
-    # if these are really 1d (i.e., have shape (1, x) or (x, 1)), then we want them to be 1d
-    
-    imgs = [i.squeeze() for i in imgs]
 
+    imgs = [i.squeeze() for i in imgs]
     if imgs[0].ndim == 1:
         # then we just want to plot each of the bands in a different subplot, no need to be fancy.
         if col_wrap is not None:
@@ -1129,7 +1108,6 @@ def pyrshow(pyr_coeffs, is_complex=False, vrange='indep1', col_wrap=None, zoom=1
                              "times, where this number is the height of the "
                              f"pyramid{residual_err_msg}. "
                              f"Instead, found:\n{err_msg}")
-        
-        if 'col' in vrange or 'row' in vrange:
-            vrange = vrange_list
-        return imshow(imgs, vrange=vrange, col_wrap=col_wrap, zoom=zoom, title=titles, **kwargs) 
+
+        vrange=vrange_list
+        return imshow(imgs, vrange=vrange, col_wrap=col_wrap, zoom=zoom, title=titles, **kwargs)
