@@ -271,6 +271,8 @@ def colormap_range(image, contains_rgb, vrange='indep1', cmap=None, n_cols = Non
         * `'auto[X]col'`: each column of the figure has the same vmin/vmax, which are 
                           computed using the auto[X] methods described above Eg. 
                           `'auto1col'`, `'auto2col'`, or `'auto3col'`. 
+        * `'auto[X]colcomplex'`: vmin and vmax for each column is computed across both 
+                    the realand imaginary parts of all images in that column.
         * `'indep0'`: each image has an independent vmin/vmax, which have the
                      same absolute value, which comes from either their minimum
                      or maximum value, whichever has the larger absolute value.
@@ -307,17 +309,21 @@ def colormap_range(image, contains_rgb, vrange='indep1', cmap=None, n_cols = Non
                     vrange_tmp = []
                     for i in range(math.ceil(len(image) / n_cols)):
                         vr, _ = colormap_range(
-                            image[n_cols * i : n_cols * (i + 1)],  vrange.split('row')[0]
-                        )
+                            image[n_cols * i : n_cols * (i + 1)], contains_rgb,  vrange.split('row')[0])
                         vrange_tmp.extend(vr)
                 elif 'col' in vrange:
-                    assert n_cols is not None, "n_cols must be provided when using col-wise vrange"
-                    vrange_tmp = [None] * len(image)
-                    for j in range(n_cols):
-                        col_images = [image[i] for i in range(j, len(image), n_cols)]
-                        vr, _ = colormap_range(col_images, vrange.split('col')[0])
-                        for k, i in enumerate(range(j, len(image), n_cols)):
-                            vrange_tmp[i] = vr[k]
+                    if 'complex' in vrange:
+                        imgs_formatted = [np.concatenate([image[ii+1], image[ii+1]]) for ii in range(0, len(image), 2)]
+                        # Divide by 2 because we are grouping complex images into pairs
+                        vrange_tmp, cmap = colormap_range(imgs_formatted, contains_rgb, vrange=vrange.split('complex')[0], n_cols=n_cols//2) 
+                        vrange_tmp = [v for v in vrange_tmp for _ in range(2)]
+                    else:
+                        vrange_tmp = [None] * len(image)
+                        for j in range(n_cols):
+                            col_images = [image[i] for i in range(j, len(image), n_cols)]
+                            vr, _ = colormap_range(col_images, contains_rgb, vrange.split('col')[0])
+                            for k, i in enumerate(range(j, len(image), n_cols)):
+                                vrange_tmp[i] = vr[k]
                 elif vrange == 'auto0':
                     M = np.nanmax([np.abs(np.nanmin(flatimg)), np.abs(np.nanmax(flatimg))])
                     vrange_tmp = [-M, M]
@@ -685,7 +691,7 @@ def _setup_figure(ax, col_wrap, image, zoom, max_shape, vert_pct):
     else:
         fig = ax.figure
         axes = [reshape_axis(ax,  zoom * max_shape)]
-    return fig, axes, n_cols, n_rows
+    return fig, axes, n_cols
 
 
 def imshow(image, vrange='indep1', zoom=1, title='', col_wrap=None, ax=None,
@@ -733,6 +739,8 @@ def imshow(image, vrange='indep1', zoom=1, title='', col_wrap=None, ax=None,
         * `'auto[X]col'`: each column of the figure has the same vmin/vmax, which are 
                           computed using the auto[X] methods described above Eg. 
                           `'auto1col'`, `'auto2col'`, or `'auto3col'`. 
+        * `'auto[X]colcomplex'`: vmin and vmax for each column is computed across both the real
+                     and imaginary parts of all images in that column.
         * `'indep0'`: each image has an independent vmin/vmax, which have the
                       same absolute value, which comes from either their
                       minimum or maximum value, whichever has the larger
@@ -816,7 +824,7 @@ def imshow(image, vrange='indep1', zoom=1, title='', col_wrap=None, ax=None,
     zooms, max_shape = _check_zooms(image, zoom, any(contains_rgb))
 
     # get the figure and axes created
-    fig, axes, n_cols, n_rows = _setup_figure(ax, col_wrap, image, zoom, max_shape, vert_pct)
+    fig, axes, n_cols = _setup_figure(ax, col_wrap, image, zoom, max_shape, vert_pct)
 
     if any(contains_rgb) and vrange != "indep1":
         warnings.warn("RGB images cannot have their vrange set: matplotlib "
@@ -824,6 +832,8 @@ def imshow(image, vrange='indep1', zoom=1, title='', col_wrap=None, ax=None,
                       "or [0, 255] (for ints).")
     vrange_list, cmap = colormap_range(image, contains_rgb, vrange, cmap, n_cols)
 
+    print(len(image))
+    print(len(vrange_list))
     assert len(image) == len(vrange_list)
 
     for im, a, r, t, z in zip(image, axes, vrange_list, title, zooms):
@@ -883,6 +893,8 @@ def animshow(video, framerate=2., as_html5=True, repeat=False,
         * `'auto[X]col'`: each column of the figure has the same vmin/vmax, which are 
                           computed using the auto[X] methods described above Eg. 
                           `'auto1col'`, `'auto2col'`, or `'auto3col'`. 
+        * `'auto[X]colcomplex'`: vmin and vmax for each column is computed across both the real
+                     and imaginary parts of all images in that column.
         * `'indep1'`: each image has an independent vmin/vmax, which are their minimum/maximum
                       values
         * `'indep2'`: each image has an independent vmin/vmax, which is their mean minus/plus 2
@@ -948,7 +960,7 @@ def animshow(video, framerate=2., as_html5=True, repeat=False,
     title, vert_pct = _convert_title_to_list(title, video)
     video, title, contains_rgb = _process_signal(video, title, plot_complex, video=True)
     zooms, max_shape = _check_zooms(video, zoom, any(contains_rgb), video=True)
-    fig, axes, n_cols, n_rows = _setup_figure(ax, col_wrap, video, zoom, max_shape, vert_pct)
+    fig, axes, n_cols = _setup_figure(ax, col_wrap, video, zoom, max_shape, vert_pct)
     if any(contains_rgb) and vrange != "indep1":
         warnings.warn("RGB images cannot have their vrange set: matplotlib "
                       "will always show them with vrange [0, 1] (for floats) "
@@ -989,7 +1001,7 @@ def animshow(video, framerate=2., as_html5=True, repeat=False,
     return anim
 
 
-def pyrshow(pyr_coeffs, is_complex=False, vrange='indep1', col_wrap=None, zoom=1, show_residuals=True, **kwargs):
+def pyrshow(pyr_coeffs, is_complex=False, vrange='auto1row', col_wrap=None, zoom=1, show_residuals=True, **kwargs):
     """Display the coefficients of the pyramid in an orderly fashion
 
     Arguments
@@ -1026,6 +1038,8 @@ def pyrshow(pyr_coeffs, is_complex=False, vrange='indep1', col_wrap=None, zoom=1
                         `'auto1col'`, `'auto2col'`, or `'auto3col'`. Note for complex pyramids, 
                         the vmin/vmax for each column is computed across both the real and 
                         imaginary parts
+        * `'auto[X]colcomplex'`: vmin and vmax for each column is computed across both the real
+                     and imaginary parts of all images in that column.
         * `'indep1'`: each image has an independent vmin/vmax, which are their minimum/maximum
                     values
         * `'indep2'`: each image has an independent vmin/vmax, which is their mean minus/plus 2
@@ -1049,7 +1063,7 @@ def pyrshow(pyr_coeffs, is_complex=False, vrange='indep1', col_wrap=None, zoom=1
     fig: `PyrFigure`
         the figure displaying the coefficients.
     """
-    # right now, we do *not* do this the same as the old code. Instead of taking the coefficients
+      # right now, we do *not* do this the same as the old code. Instead of taking the coefficients
     # and arranging them in a spiral, we use imshow and arrange them neatly, displaying all at the
     # same size (and zoom / original image size clear), with different options for vrange. It
     # doesn't seem worth it to me to implement a version that looks like the old one, since that
@@ -1068,51 +1082,21 @@ def pyrshow(pyr_coeffs, is_complex=False, vrange='indep1', col_wrap=None, zoom=1
     # not sure about scope here, so we make sure to copy the
     # pyr_coeffs dictionary.
     imgs, highpass, lowpass = convert_pyr_coeffs_to_pyr(pyr_coeffs.copy())
-  
-    imgs_formatted = imgs
-
-    # for purposes of determining vrange we want the same vmin and vmax for the real and imaginary parts of the complex images, 
-    # so we concatenate them together and compute the min and max across both parts.
-    if is_complex:
-        imgs_formatted = [np.concatenate([im.real.ravel(), im.imag.ravel()]) for im in imgs]
-
-    vrange_list, cmap = colormap_range(image=imgs_formatted, vrange=vrange, n_cols=num_orientations)
-    if is_complex: 
-        vrange_list = [v for v in vrange_list for _ in range(2)]
-
-  
-    if is_complex: 
-        # Make sure image is a list, do some preliminary checks
-        image_converted = _convert_signal_to_list(imgs)
-
-        # want to do this check before converting title to a list (at which
-        # point `title is None` will always be False). we do it here instad
-        # of checking whether the first item of title is None because it's
-        # conceivable that the user passed `title=[None, 'important
-        # title']`, and in that case we do want the space for the title
-        titles, vert_pct = _convert_title_to_list('', imgs)
-
-        plot_complex = kwargs.get("plot_complex", "rectangular")
-        imgs, titles, _  = _process_signal(image_converted, titles, plot_complex)
-
     # we can similarly grab the labels for height and band
     # from the keys in this pyramid coefficients dictionary
     pyr_coeffs_keys = [k for k in pyr_coeffs.keys() if isinstance(k, tuple)]
-    if not is_complex:
-        titles = ["height %02d, band %02d" % (h, b) for h, b in sorted(pyr_coeffs_keys)]
+    titles = ["height %02d, band %02d" % (h, b) for h, b in sorted(pyr_coeffs_keys)]
     if show_residuals:
         if highpass is not None:
             titles += ["residual highpass"]
             imgs.append(highpass)
-            vrange_list.append([highpass.min(), highpass.max()])
         if lowpass is not None:
             titles += ["residual lowpass"]
             imgs.append(lowpass)
-            vrange_list.append([lowpass.min(), lowpass.max()])
     if col_wrap_new is not None and col_wrap_new != 1:
         if col_wrap is None:
             col_wrap = col_wrap_new
-
+    # if these are really 1d (i.e., have shape (1, x) or (x, 1)), then we want them to be 1d
     imgs = [i.squeeze() for i in imgs]
     if imgs[0].ndim == 1:
         # then we just want to plot each of the bands in a different subplot, no need to be fancy.
@@ -1150,6 +1134,4 @@ def pyrshow(pyr_coeffs, is_complex=False, vrange='indep1', col_wrap=None, zoom=1
                              "times, where this number is the height of the "
                              f"pyramid{residual_err_msg}. "
                              f"Instead, found:\n{err_msg}")
-
-        vrange=vrange_list
         return imshow(imgs, vrange=vrange, col_wrap=col_wrap, zoom=zoom, title=titles, **kwargs)
