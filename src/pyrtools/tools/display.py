@@ -716,6 +716,12 @@ def imshow(image, vrange='indep1', zoom=1, title='', col_wrap=None, ax=None,
         automatically rescaled so they're displayed at the same size. thus,
         their sizes must be scalar multiples of each other.
     vrange : `tuple` or `list` or `str`
+
+        .. attention::
+           this only affects the behavior for grayscale images. RGB images
+           will always be displayed with vrange [0, 1] (for floats) or [0, 255]
+           (for ints), because of how matplotlib handles them.
+
         If a 2-tuple, specifies the image values vmin/vmax that are mapped to
         the minimum and maximum value of the colormap, respectively. If a list
         of 2-tuples, each image has an independent vmin/vmax, where each images
@@ -723,44 +729,52 @@ def imshow(image, vrange='indep1', zoom=1, title='', col_wrap=None, ax=None,
         from first image to last. If a string: 
 
         * `'auto0'`: all images have same vmin/vmax, which have the same absolute
-                     value, and come from the minimum or maximum across all
-                     images, whichever has the larger absolute value
+          value, and come from the minimum or maximum across all
+          images, whichever has the larger absolute value
+
         * `'auto/auto1'`: all images have same vmin/vmax, which are the
-                          minimum/maximum values across all images
+          minimum/maximum values across all images
+
         * `'auto2'`: all images have same vmin/vmax, which are the mean (across
-                     all images) minus/ plus 2 std dev (across all images)
+          all images) minus/ plus 2 std dev (across all images)
+
         * `'auto3'`: all images have same vmin/vmax, chosen so as to map the
-                     10th/90th percentile values to the 10th/90th percentile of
-                     the display intensity range. For example: vmin is the 10th
-                     percentile image value minus 1/8 times the difference
-                     between the 90th and 10th percentile
+          10th/90th percentile values to the 10th/90th percentile of
+          the display intensity range. For example: vmin is the 10th
+          percentile image value minus 1/8 times the difference
+          between the 90th and 10th percentile
+
         * `'auto[X]row'`: each row of the figure has the same vmin/vmax, which are 
-                          computed using the auto[X] methods described above Eg. 
-                          `'auto1row'`, `'auto2row'`, or `'auto3row'`Ie. min/max,
-                          mean minus/plus 2 std dev, or percentile statistics are 
-                          computed across all images in a given row, and those 
-                          values are used as the vmin/vmax for all images in that row. 
-                          High pass and low pass residuals have independent vmin/vmax
-                          based on min/max of the residual image itself.
+          computed using the auto[X] methods described above Eg. 
+          `'auto1row'`, `'auto2row'`, or `'auto3row'`Ie. min/max,
+          mean minus/plus 2 std dev, or percentile statistics are 
+          computed across all images in a given row, and those  
+          values are used as the vmin/vmax for all images in that row. 
+          High pass and low pass residuals have independent vmin/vmax
+          based on min/max of the residual image itself.
+
         * `'auto[X]col'`: each column of the figure has the same vmin/vmax, which are 
-                          computed using the auto[X] methods described above Eg. 
-                          `'auto1col'`, `'auto2col'`, or `'auto3col'`. 
+          computed using the auto[X] methods described above Eg. 
+          `'auto1col'`, `'auto2col'`, or `'auto3col'`. 
+
         * `'auto[X]colcomplex'`: vmin and vmax for each column is computed across both the real
-                     and imaginary parts of all images in that column.
+          and imaginary parts of all images in that column.
+
         * `'indep0'`: each image has an independent vmin/vmax, which have the
-                      same absolute value, which comes from either their
-                      minimum or maximum value, whichever has the larger
-                      absolute value.
+          same absolute value, which comes from either their
+          minimum or maximum value, whichever has the larger
+          absolute value.
+
         * `'indep1'`: each image has an independent vmin/vmax, which are their
-                      minimum/maximum values
+          minimum/maximum values.
+
         * `'indep2'`: each image has an independent vmin/vmax, which is their
-                      mean minus/plus 2 std dev
+          mean minus/plus 2 std dev.
+
         * `'indep3'`: each image has an independent vmin/vmax, chosen so that
-                      the 10th/90th percentile values map to the 10th/90th
-                      percentile intensities.
-        NOTE: this only affects the behavior for grayscale images. RGB images
-        will always be displayed with vrange [0, 1] (for floats) or [0, 255]
-        (for ints), because of how matplotlib handles them.
+          the 10th/90th percentile values map to the 10th/90th
+          percentile intensities.
+        
     zoom : `float`
         ratio of display pixels to image pixels. if >1, must be an integer. If
         <1, must be 1/d where d is a a divisor of the size of the largest
@@ -873,41 +887,65 @@ def animshow(video, framerate=2., as_html5=True, repeat=False,
     repeat : `bool`
         whether to loop the animation or just play it once
     vrange : `tuple` or `list` or `str`
-        If a 2-tuple, specifies the image values vmin/vmax that are mapped to the minimum and
-        maximum value of the colormap, respectively.  If a list
+
+        .. attention::
+           this only affects the behavior for grayscale images. RGB images
+           will always be displayed with vrange [0, 1] (for floats) or [0, 255]
+           (for ints), because of how matplotlib handles them.
+
+        If a 2-tuple, specifies the image values vmin/vmax that are mapped to
+        the minimum and maximum value of the colormap, respectively. If a list
         of 2-tuples, each image has an independent vmin/vmax, where each images
         minimum/maximum values are specified by the 2-tuples in the list ordered 
-        from first image to last. If a string:
-        * `'auto/auto1'`: all images have same vmin/vmax, which are the minimum/maximum values
-                          across all images
-        * `'auto2'`: all images have same vmin/vmax, which are the mean (across all images) minus/
-                     plus 2 std dev (across all images)
-        * `'auto3'`: all images have same vmin/vmax, chosen so as to map the 10th/90th percentile
-                     values to the 10th/90th percentile of the display intensity range. For
-                     example: vmin is the 10th percentile image value minus 1/8 times the
-                     difference between the 90th and 10th percentile
+        from first image to last. If a string: 
+
+        * `'auto0'`: all images have same vmin/vmax, which have the same absolute
+          value, and come from the minimum or maximum across all
+          images, whichever has the larger absolute value
+
+        * `'auto/auto1'`: all images have same vmin/vmax, which are the
+          minimum/maximum values across all images
+
+        * `'auto2'`: all images have same vmin/vmax, which are the mean (across
+          all images) minus/ plus 2 std dev (across all images)
+
+        * `'auto3'`: all images have same vmin/vmax, chosen so as to map the
+          10th/90th percentile values to the 10th/90th percentile of
+          the display intensity range. For example: vmin is the 10th
+          percentile image value minus 1/8 times the difference
+          between the 90th and 10th percentile
+
         * `'auto[X]row'`: each row of the figure has the same vmin/vmax, which are 
-                          computed using the auto[X] methods described above Eg. 
-                          `'auto1row'`, `'auto2row'`, or `'auto3row'`Ie. min/max,
-                          mean minus/plus 2 std dev, or percentile statistics are 
-                          computed across all images in a given row, and those 
-                          values are used as the vmin/vmax for all images in that row. 
-                          High pass and low pass residuals have independent vmin/vmax
-                          based on min/max of the residual image itself.
+          computed using the auto[X] methods described above Eg. 
+          `'auto1row'`, `'auto2row'`, or `'auto3row'`Ie. min/max,
+          mean minus/plus 2 std dev, or percentile statistics are 
+          computed across all images in a given row, and those  
+          values are used as the vmin/vmax for all images in that row. 
+          High pass and low pass residuals have independent vmin/vmax
+          based on min/max of the residual image itself.
+
         * `'auto[X]col'`: each column of the figure has the same vmin/vmax, which are 
-                          computed using the auto[X] methods described above Eg. 
-                          `'auto1col'`, `'auto2col'`, or `'auto3col'`. 
+          computed using the auto[X] methods described above Eg. 
+          `'auto1col'`, `'auto2col'`, or `'auto3col'`. 
+
         * `'auto[X]colcomplex'`: vmin and vmax for each column is computed across both the real
-                     and imaginary parts of all images in that column.
-        * `'indep1'`: each image has an independent vmin/vmax, which are their minimum/maximum
-                      values
-        * `'indep2'`: each image has an independent vmin/vmax, which is their mean minus/plus 2
-                      std dev
-        * `'indep3'`: each image has an independent vmin/vmax, chosen so that the 10th/90th
-                      percentile values map to the 10th/90th percentile intensities.
-        NOTE: this only affects the behavior for grayscale images. RGB images
-        will always be displayed with vrange [0, 1] (for floats) or [0, 255]
-        (for ints), because of how matplotlib handles them.
+          and imaginary parts of all images in that column.
+
+        * `'indep0'`: each image has an independent vmin/vmax, which have the
+          same absolute value, which comes from either their
+          minimum or maximum value, whichever has the larger
+          absolute value.
+
+        * `'indep1'`: each image has an independent vmin/vmax, which are their
+          minimum/maximum values.
+
+        * `'indep2'`: each image has an independent vmin/vmax, which is their
+          mean minus/plus 2 std dev.
+
+        * `'indep3'`: each image has an independent vmin/vmax, chosen so that
+          the 10th/90th percentile values map to the 10th/90th
+          percentile intensities.
+        
     zoom : `float`
         amount we zoom the video frames (must result in an integer when multiplied by
         video.shape[1:])
@@ -1016,40 +1054,65 @@ def pyrshow(pyr_coeffs, is_complex=False, vrange='auto1row', col_wrap=None, zoom
         default False, indicates whether the pyramids is real or complex
         indicating whether the pyramid is complex or real
     vrange : `tuple` or `list` or `str`
-        If a single 2-tuple, specifies the image values vmin/vmax that are mapped to the minimum and
-        maximum value of the colormap, respectively. 
-        If a list of 2-tuples, each image has an independent vmin/vmax, where each images minimum/maximum 
-        values are specified by the 2-tuples in the list ordered from first image to last. If a string:
 
-        * `'auto/auto1'`: all images have same vmin/vmax, which are the minimum/maximum values
-                        across all images
-        * `'auto2'`: all images have same vmin/vmax, which are the mean (across all images) minus/
-                    plus 2 std dev (across all images)
-        * `'auto3'`: all images have same vmin/vmax, chosen so as to map the 10th/90th percentile
-                    values to the 10th/90th percentile of the display intensity range. For
-                    example: vmin is the 10th percentile image value minus 1/8 times the
-                    difference between the 90th and 10th percentile
+        .. attention::
+           this only affects the behavior for grayscale images. RGB images
+           will always be displayed with vrange [0, 1] (for floats) or [0, 255]
+           (for ints), because of how matplotlib handles them.
+
+        If a 2-tuple, specifies the image values vmin/vmax that are mapped to
+        the minimum and maximum value of the colormap, respectively. If a list
+        of 2-tuples, each image has an independent vmin/vmax, where each images
+        minimum/maximum values are specified by the 2-tuples in the list ordered 
+        from first image to last. If a string: 
+
+        * `'auto0'`: all images have same vmin/vmax, which have the same absolute
+          value, and come from the minimum or maximum across all
+          images, whichever has the larger absolute value
+
+        * `'auto/auto1'`: all images have same vmin/vmax, which are the
+          minimum/maximum values across all images
+
+        * `'auto2'`: all images have same vmin/vmax, which are the mean (across
+          all images) minus/ plus 2 std dev (across all images)
+
+        * `'auto3'`: all images have same vmin/vmax, chosen so as to map the
+          10th/90th percentile values to the 10th/90th percentile of
+          the display intensity range. For example: vmin is the 10th
+          percentile image value minus 1/8 times the difference
+          between the 90th and 10th percentile
+
         * `'auto[X]row'`: each row of the figure has the same vmin/vmax, which are 
-                        computed using the auto[X] methods described above Eg. 
-                        `'auto1row'`, `'auto2row'`, or `'auto3row'`Ie. min/max,
-                        mean minus/plus 2 std dev, or percentile statistics are 
-                        computed across all images in a given row, and those 
-                        values are used as the vmin/vmax for all images in that row. 
-                        High pass and low pass residuals have independent vmin/vmax
-                        based on min/max of the residual image itself
+          computed using the auto[X] methods described above Eg. 
+          `'auto1row'`, `'auto2row'`, or `'auto3row'`Ie. min/max,
+          mean minus/plus 2 std dev, or percentile statistics are 
+          computed across all images in a given row, and those  
+          values are used as the vmin/vmax for all images in that row. 
+          High pass and low pass residuals have independent vmin/vmax
+          based on min/max of the residual image itself.
+
         * `'auto[X]col'`: each column of the figure has the same vmin/vmax, which are 
-                        computed using the auto[X] methods described above Eg. 
-                        `'auto1col'`, `'auto2col'`, or `'auto3col'`. Note for complex pyramids, 
-                        the vmin/vmax for each column is computed across both the real and 
-                        imaginary parts
+          computed using the auto[X] methods described above Eg. 
+          `'auto1col'`, `'auto2col'`, or `'auto3col'`. 
+
         * `'auto[X]colcomplex'`: vmin and vmax for each column is computed across both the real
-                     and imaginary parts of all images in that column.
-        * `'indep1'`: each image has an independent vmin/vmax, which are their minimum/maximum
-                    values
-        * `'indep2'`: each image has an independent vmin/vmax, which is their mean minus/plus 2
-                    std dev
-        * `'indep3'`: each image has an independent vmin/vmax, chosen so that the 10th/90th
-                    percentile values map to the 10th/90th percentile intensities.
+          and imaginary parts of all images in that column.
+
+        * `'indep0'`: each image has an independent vmin/vmax, which have the
+          same absolute value, which comes from either their
+          minimum or maximum value, whichever has the larger
+          absolute value.
+
+        * `'indep1'`: each image has an independent vmin/vmax, which are their
+          minimum/maximum values.
+
+        * `'indep2'`: each image has an independent vmin/vmax, which is their
+          mean minus/plus 2 std dev.
+
+        * `'indep3'`: each image has an independent vmin/vmax, chosen so that
+          the 10th/90th percentile values map to the 10th/90th
+          percentile intensities.
+        
     col_wrap : `int` or None
         Only usable when the pyramid is one-dimensional (e.g., Gaussian or Laplacian Pyramid),
         otherwise the column wrap is determined by the number of bands. If not None, how many axes
