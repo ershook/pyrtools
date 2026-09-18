@@ -295,6 +295,13 @@ def colormap_range(image, contains_rgb, vrange='indep1', cmap=None, n_cols = Non
         for each image.
     """
     if isinstance(vrange, str):
+
+        if 'indep' in vrange and 'row' in vrange:
+            raise ValueError("indep and row cannot be used together in vrange. Use either indep or auto[x]row")
+        if 'indep' in vrange and 'col' in vrange:
+            raise ValueError("indep and col cannot be used together in vrange. Use either indep or " \
+            "auto[x]col or auto[x]colcomplex")    
+
         if vrange[:4] == 'auto':
             # flatimg is one long 1d array, which enables the min, max, mean, std, and
             # percentile calls to operate on the values from each of the images simultaneously.
