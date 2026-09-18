@@ -348,7 +348,6 @@ def colormap_range(image, contains_rgb, vrange='indep1', cmap=None, n_cols = Non
                 # because the vrange doesn't depend on the computed values above, it
                 # must be either [0, 1] for floats or [0, 255] for ints
                 pass
-
             # make sure to return as many ranges as there are images
             vrange_list = []
             if 'row' not in vrange and 'col' not in vrange:
