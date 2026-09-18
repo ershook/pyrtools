@@ -1601,37 +1601,45 @@ class TestPyrshow(unittest.TestCase):
         with self.assertRaises(ValueError):
             pt.pyrshow(pyr.pyr_coeffs)
 
-def _get_clims(fig):
-    """get vmin vmax for each image in fig as list of tuples (vmin, vmax)"""
-    return [ax.images[0].get_clim() for ax in fig.axes if ax.images]
-
-# define test images such that each image has a different range of values,
-# so we can test that the correct vrange is applied to each one
-IMAGES = [np.arange(4 * i, 4 * i + 4, dtype=float).reshape(2, 2) for i in range(4)]
-
 class TestVrange(unittest.TestCase):
 
-    def tearDown(self):
-        plt.close("all")
+    def _get_clims(self, fig):
+        """get vmin vmax for each image in fig as list of tuples (vmin, vmax)"""
+        return [ax.images[0].get_clim() for ax in fig.axes if ax.images]
+    
+    def _get_title_clims(self, fig):
+        """get vmin vmax for each image in fig as list of tuples (vmin, vmax)"""
+        clims = []
+        for ax in fig.axes:
+            title = ax.get_title()
+            vmin, vmax  = title.split('[')[1].split(']')[0].split(',')
+            clims.append((float(vmin.strip()), float(vmax.strip())))
+        return clims
+
+    def _get_images(self):
+        # define test images such that each image has a different range of values,
+        # so we can test that the correct vrange is applied to each one
+        images = [np.arange(4 * i, 4 * i + 4, dtype=float).reshape(2, 2) for i in range(4)]
+        return images
 
     def _imshow(self, vrange):
-        return pt.imshow(IMAGES, vrange=vrange, zoom=1, col_wrap=2)
+        return pt.imshow(self._get_images(), vrange=vrange, zoom=1, col_wrap=2)
 
     def _expected_clims(self, vrange):
-        clims, _ = colormap_range(image=IMAGES, vrange=vrange, cmap=None, n_rows=2, n_cols=2)
+        clims, _ = colormap_range(image=self._get_images(), contains_rgb= [False]*len(self._get_images()), vrange=vrange, cmap=None, n_cols=2)
         return clims
 
     def test_global_vrange_all_images_share_clim(self):
         for mode in range(4):
             with self.subTest(mode=mode):
-                clims = _get_clims(self._imshow(f"auto{mode}"))
+                clims = self._get_clims(self._imshow(f"auto{mode}"))
                 self.assertTrue(all(c == clims[0] for c in clims))
 
     def test_global_vrange_vmin(self):
         for mode in range(4):
             for img_idx in range(4):
                 with self.subTest(mode=mode, img_idx=img_idx):
-                    vmin, _ = _get_clims(self._imshow(f"auto{mode}"))[img_idx]
+                    vmin, _ = self._get_clims(self._imshow(f"auto{mode}"))[img_idx]
                     exp_vmin, _ = self._expected_clims(f"auto{mode}")[img_idx]
                     self.assertTrue(np.isclose(vmin, exp_vmin, atol=1e-6))
 
@@ -1639,7 +1647,7 @@ class TestVrange(unittest.TestCase):
         for mode in range(4):
             for img_idx in range(4):
                 with self.subTest(mode=mode, img_idx=img_idx):
-                    _, vmax = _get_clims(self._imshow(f"auto{mode}"))[img_idx]
+                    _, vmax = self._get_clims(self._imshow(f"auto{mode}"))[img_idx]
                     _, exp_vmax = self._expected_clims(f"auto{mode}")[img_idx]
                     self.assertTrue(np.isclose(vmax, exp_vmax, atol=1e-6))
     
@@ -1648,15 +1656,15 @@ class TestVrange(unittest.TestCase):
             for img_idx in range(4):
                 with self.subTest(mode=mode, img_idx=img_idx):
                     fig = self._imshow(f"auto{mode}")
-                    clim_vmin, clim_vmax = _get_clims(fig)[img_idx]
-                    title_vmin, title_vmax = _get_title_clims(fig)[img_idx]
+                    clim_vmin, clim_vmax = self._get_clims(fig)[img_idx]
+                    title_vmin, title_vmax = self._get_title_clims(fig)[img_idx]
                     self.assertEqual("{:.1e}".format(clim_vmin), "{:.1e}".format(title_vmin))
                     self.assertEqual("{:.1e}".format(clim_vmax), "{:.1e}".format(title_vmax))
 
     def test_row_vrange_same_row_shares_clim(self):
         for mode in range(4):
             with self.subTest(mode=mode):
-                clims = _get_clims(self._imshow(f"auto{mode}row"))
+                clims = self._get_clims(self._imshow(f"auto{mode}row"))
                 self.assertEqual(clims[0], clims[1], "row 0 images differ")
                 self.assertEqual(clims[2], clims[3], "row 1 images differ")
 
@@ -1664,7 +1672,7 @@ class TestVrange(unittest.TestCase):
         for mode in range(4):
             for img_idx in range(4):
                 with self.subTest(mode=mode, img_idx=img_idx):
-                    vmin, _ = _get_clims(self._imshow(f"auto{mode}row"))[img_idx]
+                    vmin, _ = self._get_clims(self._imshow(f"auto{mode}row"))[img_idx]
                     exp_vmin, _ = self._expected_clims(f"auto{mode}row")[img_idx]
                     self.assertTrue(np.isclose(vmin, exp_vmin, atol=1e-6))
 
@@ -1672,7 +1680,7 @@ class TestVrange(unittest.TestCase):
         for mode in range(4):
             for img_idx in range(4):
                 with self.subTest(mode=mode, img_idx=img_idx):
-                    _, vmax = _get_clims(self._imshow(f"auto{mode}row"))[img_idx]
+                    _, vmax = self._get_clims(self._imshow(f"auto{mode}row"))[img_idx]
                     _, exp_vmax = self._expected_clims(f"auto{mode}row")[img_idx]
                     self.assertTrue(np.isclose(vmax, exp_vmax, atol=1e-6))
 
@@ -1681,15 +1689,15 @@ class TestVrange(unittest.TestCase):
             for img_idx in range(4):
                 with self.subTest(mode=mode, img_idx=img_idx):
                     fig = self._imshow(f"auto{mode}row")
-                    clim_vmin, clim_vmax = _get_clims(fig)[img_idx]
-                    title_vmin, title_vmax = _get_title_clims(fig)[img_idx]
+                    clim_vmin, clim_vmax = self._get_clims(fig)[img_idx]
+                    title_vmin, title_vmax = self._get_title_clims(fig)[img_idx]
                     self.assertEqual("{:.1e}".format(clim_vmin), "{:.1e}".format(title_vmin))
                     self.assertEqual("{:.1e}".format(clim_vmax), "{:.1e}".format(title_vmax))
 
     def test_col_vrange_same_col_shares_clim(self):
         for mode in range(4):
             with self.subTest(mode=mode):
-                clims = _get_clims(self._imshow(f"auto{mode}col"))
+                clims = self._get_clims(self._imshow(f"auto{mode}col"))
                 self.assertEqual(clims[0], clims[2], "col 0 images differ")
                 self.assertEqual(clims[1], clims[3], "col 1 images differ")
 
@@ -1697,7 +1705,7 @@ class TestVrange(unittest.TestCase):
         for mode in range(4):
             for img_idx in range(4):
                 with self.subTest(mode=mode, img_idx=img_idx):
-                    vmin, _ = _get_clims(self._imshow(f"auto{mode}col"))[img_idx]
+                    vmin, _ = self._get_clims(self._imshow(f"auto{mode}col"))[img_idx]
                     exp_vmin, _ = self._expected_clims(f"auto{mode}col")[img_idx]
                     self.assertTrue(np.isclose(vmin, exp_vmin, atol=1e-6))
 
@@ -1705,7 +1713,7 @@ class TestVrange(unittest.TestCase):
         for mode in range(4):
             for img_idx in range(4):
                 with self.subTest(mode=mode, img_idx=img_idx):
-                    _, vmax = _get_clims(self._imshow(f"auto{mode}col"))[img_idx]
+                    _, vmax = self._get_clims(self._imshow(f"auto{mode}col"))[img_idx]
                     _, exp_vmax = self._expected_clims(f"auto{mode}col")[img_idx]
                     self.assertTrue(np.isclose(vmax, exp_vmax, atol=1e-6))
     
@@ -1714,8 +1722,8 @@ class TestVrange(unittest.TestCase):
             for img_idx in range(4):
                 with self.subTest(mode=mode, img_idx=img_idx):
                     fig = self._imshow(f"auto{mode}col")
-                    clim_vmin, clim_vmax = _get_clims(fig)[img_idx]
-                    title_vmin, title_vmax = _get_title_clims(fig)[img_idx]
+                    clim_vmin, clim_vmax = self._get_clims(fig)[img_idx]
+                    title_vmin, title_vmax = self._get_title_clims(fig)[img_idx]
                     self.assertEqual("{:.1e}".format(clim_vmin), "{:.1e}".format(title_vmin))
                     self.assertEqual("{:.1e}".format(clim_vmax), "{:.1e}".format(title_vmax))
 
@@ -1723,7 +1731,7 @@ class TestVrange(unittest.TestCase):
         for mode in range(4):
             for img_idx in range(4):
                 with self.subTest(mode=mode, img_idx=img_idx):
-                    vmin, _ = _get_clims(self._imshow(f"indep{mode}"))[img_idx]
+                    vmin, _ = self._get_clims(self._imshow(f"indep{mode}"))[img_idx]
                     exp_vmin, _ = self._expected_clims(f"indep{mode}")[img_idx]
                     self.assertTrue(np.isclose(vmin, exp_vmin, atol=1e-6))
 
@@ -1731,7 +1739,7 @@ class TestVrange(unittest.TestCase):
         for mode in range(4):
             for img_idx in range(4):
                 with self.subTest(mode=mode, img_idx=img_idx):
-                    _, vmax = _get_clims(self._imshow(f"indep{mode}"))[img_idx]
+                    _, vmax = self._get_clims(self._imshow(f"indep{mode}"))[img_idx]
                     _, exp_vmax = self._expected_clims(f"indep{mode}")[img_idx]
                     self.assertTrue(np.isclose(vmax, exp_vmax, atol=1e-6))
 
@@ -1740,8 +1748,8 @@ class TestVrange(unittest.TestCase):
             for img_idx in range(4):
                 with self.subTest(mode=mode, img_idx=img_idx):
                     fig = self._imshow(f"indep{mode}")
-                    clim_vmin, clim_vmax = _get_clims(fig)[img_idx]
-                    title_vmin, title_vmax = _get_title_clims(fig)[img_idx]
+                    clim_vmin, clim_vmax = self._get_clims(fig)[img_idx]
+                    title_vmin, title_vmax = self._get_title_clims(fig)[img_idx]
                     self.assertEqual("{:.1e}".format(clim_vmin), "{:.1e}".format(title_vmin))
                     self.assertEqual("{:.1e}".format(clim_vmax), "{:.1e}".format(title_vmax))
 

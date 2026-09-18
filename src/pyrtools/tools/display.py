@@ -832,8 +832,6 @@ def imshow(image, vrange='indep1', zoom=1, title='', col_wrap=None, ax=None,
                       "or [0, 255] (for ints).")
     vrange_list, cmap = colormap_range(image, contains_rgb, vrange, cmap, n_cols)
 
-    print(len(image))
-    print(len(vrange_list))
     assert len(image) == len(vrange_list)
 
     for im, a, r, t, z in zip(image, axes, vrange_list, title, zooms):
