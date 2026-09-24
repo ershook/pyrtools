@@ -1679,6 +1679,13 @@ class TestVrange(unittest.TestCase):
                 clims = self._get_clims(self._imshow(f"auto{mode}"))
                 self.assertTrue(all(c == clims[0] for c in clims))
 
+    def test_indep_vrange_all_images_have_different_clims(self):
+        for mode in range(4):
+            with self.subTest(mode=mode):
+                clims = self._get_clims(self._imshow(f"indep{mode}"))
+                self.assertTrue(len(set(clims)) == len(clims),
+                                 "not all images have different clims")
+
 def main():
     unittest.main()
 
