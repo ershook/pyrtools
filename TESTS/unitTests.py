@@ -1626,40 +1626,38 @@ class TestVrange(unittest.TestCase):
         return pt.imshow(self._get_images(), vrange=vrange, zoom=1, col_wrap=2)
 
     def _expected_clims(self, vrange):
-        clims, _ = colormap_range(image=self._get_images(), contains_rgb= [False]*len(self._get_images()), vrange=vrange, cmap=None, n_cols=2)
+        clims, _ = colormap_range(image=self._get_images(), contains_rgb= [False]*len(self._get_images()), 
+                                  vrange=vrange, cmap=None, n_cols=2)
         return clims
 
-    def test_global_vrange_all_images_share_clim(self):
-        for mode in range(4):
-            with self.subTest(mode=mode):
-                clims = self._get_clims(self._imshow(f"auto{mode}"))
-                self.assertTrue(all(c == clims[0] for c in clims))
-
-    def test_global_vrange_vmin(self):
-        for mode in range(4):
-            for img_idx in range(4):
-                with self.subTest(mode=mode, img_idx=img_idx):
-                    vmin, _ = self._get_clims(self._imshow(f"auto{mode}"))[img_idx]
-                    exp_vmin, _ = self._expected_clims(f"auto{mode}")[img_idx]
-                    self.assertTrue(np.isclose(vmin, exp_vmin, atol=1e-6))
-
-    def test_global_vrange_vmax(self):
-        for mode in range(4):
-            for img_idx in range(4):
-                with self.subTest(mode=mode, img_idx=img_idx):
-                    _, vmax = self._get_clims(self._imshow(f"auto{mode}"))[img_idx]
-                    _, exp_vmax = self._expected_clims(f"auto{mode}")[img_idx]
-                    self.assertTrue(np.isclose(vmax, exp_vmax, atol=1e-6))
-    
-    def test_global_vrange_title_matches_clim(self):
-        for mode in range(4):
-            for img_idx in range(4):
-                with self.subTest(mode=mode, img_idx=img_idx):
-                    fig = self._imshow(f"auto{mode}")
-                    clim_vmin, clim_vmax = self._get_clims(fig)[img_idx]
-                    title_vmin, title_vmax = self._get_title_clims(fig)[img_idx]
-                    self.assertEqual("{:.1e}".format(clim_vmin), "{:.1e}".format(title_vmin))
-                    self.assertEqual("{:.1e}".format(clim_vmax), "{:.1e}".format(title_vmax))
+    def test_vrange_max_vmin_matches_expected(self):
+        for mode in ['auto', 'indep', 'autoNrow', 'autoNcol','autoNcolcomplex']:
+            for mode_num in range(4):
+                for img_idx in range(4):
+                    with self.subTest(mode=mode, img_idx=img_idx):
+                        if 'N' in mode:
+                            mode_full = f"{mode.replace('N',str(mode_num))}"
+                        else:
+                            mode_full = f"{mode}{mode_num}"
+                        vmin, vmax = self._get_clims(self._imshow(mode_full))[img_idx]
+                        exp_vmin, exp_vmax = self._expected_clims(mode_full)[img_idx]
+                        self.assertTrue(np.isclose(vmax, exp_vmax, atol=1e-6))
+                        self.assertTrue(np.isclose(vmin, exp_vmin, atol=1e-6))
+        
+    def test_vrange_title_matches_clim(self):
+        for mode in ['auto', 'indep', 'autoNrow', 'autoNcol','autoNcolcomplex']:
+            for mode_num in range(4):
+                for img_idx in range(4):
+                    with self.subTest(mode=mode, img_idx=img_idx):
+                        if 'N' in mode:
+                            mode_full = f"{mode.replace('N',str(mode_num))}"
+                        else:
+                            mode_full = f"{mode}{mode_num}"
+                        fig = self._imshow(mode_full)
+                        clim_vmin, clim_vmax = self._get_clims(fig)[img_idx]
+                        title_vmin, title_vmax = self._get_title_clims(fig)[img_idx]
+                        self.assertEqual("{:.1e}".format(clim_vmin), "{:.1e}".format(title_vmin))
+                        self.assertEqual("{:.1e}".format(clim_vmax), "{:.1e}".format(title_vmax))
 
     def test_row_vrange_same_row_shares_clim(self):
         for mode in range(4):
@@ -1668,32 +1666,6 @@ class TestVrange(unittest.TestCase):
                 self.assertEqual(clims[0], clims[1], "row 0 images differ")
                 self.assertEqual(clims[2], clims[3], "row 1 images differ")
 
-    def test_row_vrange_vmin(self):
-        for mode in range(4):
-            for img_idx in range(4):
-                with self.subTest(mode=mode, img_idx=img_idx):
-                    vmin, _ = self._get_clims(self._imshow(f"auto{mode}row"))[img_idx]
-                    exp_vmin, _ = self._expected_clims(f"auto{mode}row")[img_idx]
-                    self.assertTrue(np.isclose(vmin, exp_vmin, atol=1e-6))
-
-    def test_row_vrange_vmax(self):
-        for mode in range(4):
-            for img_idx in range(4):
-                with self.subTest(mode=mode, img_idx=img_idx):
-                    _, vmax = self._get_clims(self._imshow(f"auto{mode}row"))[img_idx]
-                    _, exp_vmax = self._expected_clims(f"auto{mode}row")[img_idx]
-                    self.assertTrue(np.isclose(vmax, exp_vmax, atol=1e-6))
-
-    def test_row_vrange_title_matches_clim(self):
-        for mode in range(4):
-            for img_idx in range(4):
-                with self.subTest(mode=mode, img_idx=img_idx):
-                    fig = self._imshow(f"auto{mode}row")
-                    clim_vmin, clim_vmax = self._get_clims(fig)[img_idx]
-                    title_vmin, title_vmax = self._get_title_clims(fig)[img_idx]
-                    self.assertEqual("{:.1e}".format(clim_vmin), "{:.1e}".format(title_vmin))
-                    self.assertEqual("{:.1e}".format(clim_vmax), "{:.1e}".format(title_vmax))
-
     def test_col_vrange_same_col_shares_clim(self):
         for mode in range(4):
             with self.subTest(mode=mode):
@@ -1701,57 +1673,11 @@ class TestVrange(unittest.TestCase):
                 self.assertEqual(clims[0], clims[2], "col 0 images differ")
                 self.assertEqual(clims[1], clims[3], "col 1 images differ")
 
-    def test_col_vrange_vmin(self):
+    def test_global_vrange_all_images_share_clim(self):
         for mode in range(4):
-            for img_idx in range(4):
-                with self.subTest(mode=mode, img_idx=img_idx):
-                    vmin, _ = self._get_clims(self._imshow(f"auto{mode}col"))[img_idx]
-                    exp_vmin, _ = self._expected_clims(f"auto{mode}col")[img_idx]
-                    self.assertTrue(np.isclose(vmin, exp_vmin, atol=1e-6))
-
-    def test_col_vrange_vmax(self):
-        for mode in range(4):
-            for img_idx in range(4):
-                with self.subTest(mode=mode, img_idx=img_idx):
-                    _, vmax = self._get_clims(self._imshow(f"auto{mode}col"))[img_idx]
-                    _, exp_vmax = self._expected_clims(f"auto{mode}col")[img_idx]
-                    self.assertTrue(np.isclose(vmax, exp_vmax, atol=1e-6))
-    
-    def test_col_vrange_title_matches_clim(self):
-        for mode in range(4):
-            for img_idx in range(4):
-                with self.subTest(mode=mode, img_idx=img_idx):
-                    fig = self._imshow(f"auto{mode}col")
-                    clim_vmin, clim_vmax = self._get_clims(fig)[img_idx]
-                    title_vmin, title_vmax = self._get_title_clims(fig)[img_idx]
-                    self.assertEqual("{:.1e}".format(clim_vmin), "{:.1e}".format(title_vmin))
-                    self.assertEqual("{:.1e}".format(clim_vmax), "{:.1e}".format(title_vmax))
-
-    def test_indep_vrange_vmin(self):
-        for mode in range(4):
-            for img_idx in range(4):
-                with self.subTest(mode=mode, img_idx=img_idx):
-                    vmin, _ = self._get_clims(self._imshow(f"indep{mode}"))[img_idx]
-                    exp_vmin, _ = self._expected_clims(f"indep{mode}")[img_idx]
-                    self.assertTrue(np.isclose(vmin, exp_vmin, atol=1e-6))
-
-    def test_indep_vrange_vmax(self):
-        for mode in range(4):
-            for img_idx in range(4):
-                with self.subTest(mode=mode, img_idx=img_idx):
-                    _, vmax = self._get_clims(self._imshow(f"indep{mode}"))[img_idx]
-                    _, exp_vmax = self._expected_clims(f"indep{mode}")[img_idx]
-                    self.assertTrue(np.isclose(vmax, exp_vmax, atol=1e-6))
-
-    def test_indep_vrange_title_matches_clim(self):
-        for mode in range(4):
-            for img_idx in range(4):
-                with self.subTest(mode=mode, img_idx=img_idx):
-                    fig = self._imshow(f"indep{mode}")
-                    clim_vmin, clim_vmax = self._get_clims(fig)[img_idx]
-                    title_vmin, title_vmax = self._get_title_clims(fig)[img_idx]
-                    self.assertEqual("{:.1e}".format(clim_vmin), "{:.1e}".format(title_vmin))
-                    self.assertEqual("{:.1e}".format(clim_vmax), "{:.1e}".format(title_vmax))
+            with self.subTest(mode=mode):
+                clims = self._get_clims(self._imshow(f"auto{mode}"))
+                self.assertTrue(all(c == clims[0] for c in clims))
 
 def main():
     unittest.main()

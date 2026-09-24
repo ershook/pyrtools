@@ -320,17 +320,17 @@ def colormap_range(image, contains_rgb, vrange='indep1', cmap=None, n_cols = Non
                         vrange_tmp.extend(vr)
                 elif 'col' in vrange:
                     if 'complex' in vrange:
-                        imgs_formatted = [np.concatenate([image[ii+1], image[ii+1]]) for ii in range(0, len(image), 2)]
+                        imgs_formatted = [np.concatenate([image[i+1], image[i+1]]) for i in range(0, len(image), 2)]
                         # Divide by 2 because we are grouping complex images into pairs
                         vrange_tmp, cmap = colormap_range(imgs_formatted, contains_rgb, vrange=vrange.split('complex')[0], n_cols=n_cols//2) 
                         vrange_tmp = [v for v in vrange_tmp for _ in range(2)]
                     else:
-                        vrange_tmp = [None] * len(image)
+                        vrange_tmp = []
                         for j in range(n_cols):
                             col_images = [image[i] for i in range(j, len(image), n_cols)]
                             vr, _ = colormap_range(col_images, contains_rgb, vrange.split('col')[0])
-                            for k, i in enumerate(range(j, len(image), n_cols)):
-                                vrange_tmp[i] = vr[k]
+                            vrange_tmp.append(vr[0]) # all entries will be the same, so just take the first
+                        vrange_tmp *= (len(image) // n_cols) # now repeat values for each row
                 elif vrange == 'auto0':
                     M = np.nanmax([np.abs(np.nanmin(flatimg)), np.abs(np.nanmax(flatimg))])
                     vrange_tmp = [-M, M]
@@ -728,50 +728,45 @@ def imshow(image, vrange='indep1', zoom=1, title='', col_wrap=None, ax=None,
         minimum/maximum values are specified by the 2-tuples in the list ordered 
         from first image to last. If a string: 
 
-        * `'auto0'`: all images have same vmin/vmax, which have the same absolute
+        * ``'auto0'``: all images have same vmin/vmax, which have the same absolute
           value, and come from the minimum or maximum across all
           images, whichever has the larger absolute value
 
-        * `'auto/auto1'`: all images have same vmin/vmax, which are the
+        * ``'auto/auto1'``: all images have same vmin/vmax, which are the
           minimum/maximum values across all images
 
-        * `'auto2'`: all images have same vmin/vmax, which are the mean (across
+        * ``'auto2'``: all images have same vmin/vmax, which are the mean (across
           all images) minus/ plus 2 std dev (across all images)
 
-        * `'auto3'`: all images have same vmin/vmax, chosen so as to map the
+        * ``'auto3'``: all images have same vmin/vmax, chosen so as to map the
           10th/90th percentile values to the 10th/90th percentile of
           the display intensity range. For example: vmin is the 10th
           percentile image value minus 1/8 times the difference
           between the 90th and 10th percentile
 
-        * `'auto[X]row'`: each row of the figure has the same vmin/vmax, which are 
-          computed using the auto[X] methods described above Eg. 
-          `'auto1row'`, `'auto2row'`, or `'auto3row'`Ie. min/max,
-          mean minus/plus 2 std dev, or percentile statistics are 
-          computed across all images in a given row, and those  
-          values are used as the vmin/vmax for all images in that row. 
-          High pass and low pass residuals have independent vmin/vmax
-          based on min/max of the residual image itself.
+        * ``'autoNrow'``: where ``N`` is an integer. each row of the figure 
+          has the same vmin/vmax, which are 
+          computed using the corresponding ``"autoN"`` method described above.
 
-        * `'auto[X]col'`: each column of the figure has the same vmin/vmax, which are 
-          computed using the auto[X] methods described above Eg. 
-          `'auto1col'`, `'auto2col'`, or `'auto3col'`. 
+        * ``'autoNcol'``: where ``N`` is an integer. each column of the figure has the
+          same vmin/vmax, which are computed using the corresponding ``"autoN"`` 
+          method described above.
 
-        * `'auto[X]colcomplex'`: vmin and vmax for each column is computed across both the real
-          and imaginary parts of all images in that column.
+        * ``'autoNcolcomplex'``: where ``N`` is an integer. Same as ``'autoNcol'``, 
+          but the vmin/vmax are computed across the real and imaginary parts in each column.
 
-        * `'indep0'`: each image has an independent vmin/vmax, which have the
+        * ``'indep0'``: each image has an independent vmin/vmax, which have the
           same absolute value, which comes from either their
           minimum or maximum value, whichever has the larger
           absolute value.
 
-        * `'indep1'`: each image has an independent vmin/vmax, which are their
+        * ``'indep1'``: each image has an independent vmin/vmax, which are their
           minimum/maximum values.
 
-        * `'indep2'`: each image has an independent vmin/vmax, which is their
+        * ``'indep2'``: each image has an independent vmin/vmax, which is their
           mean minus/plus 2 std dev.
 
-        * `'indep3'`: each image has an independent vmin/vmax, chosen so that
+        * ``'indep3'``: each image has an independent vmin/vmax, chosen so that
           the 10th/90th percentile values map to the 10th/90th
           percentile intensities.
         
@@ -893,56 +888,45 @@ def animshow(video, framerate=2., as_html5=True, repeat=False,
            will always be displayed with vrange [0, 1] (for floats) or [0, 255]
            (for ints), because of how matplotlib handles them.
 
-        If a 2-tuple, specifies the image values vmin/vmax that are mapped to
-        the minimum and maximum value of the colormap, respectively. If a list
-        of 2-tuples, each image has an independent vmin/vmax, where each images
-        minimum/maximum values are specified by the 2-tuples in the list ordered 
-        from first image to last. If a string: 
-
-        * `'auto0'`: all images have same vmin/vmax, which have the same absolute
+        * ``'auto0'``: all images have same vmin/vmax, which have the same absolute
           value, and come from the minimum or maximum across all
           images, whichever has the larger absolute value
 
-        * `'auto/auto1'`: all images have same vmin/vmax, which are the
+        * ``'auto/auto1'``: all images have same vmin/vmax, which are the
           minimum/maximum values across all images
 
-        * `'auto2'`: all images have same vmin/vmax, which are the mean (across
+        * ``'auto2'``: all images have same vmin/vmax, which are the mean (across
           all images) minus/ plus 2 std dev (across all images)
 
-        * `'auto3'`: all images have same vmin/vmax, chosen so as to map the
+        * ``'auto3'``: all images have same vmin/vmax, chosen so as to map the
           10th/90th percentile values to the 10th/90th percentile of
           the display intensity range. For example: vmin is the 10th
           percentile image value minus 1/8 times the difference
           between the 90th and 10th percentile
 
-        * `'auto[X]row'`: each row of the figure has the same vmin/vmax, which are 
-          computed using the auto[X] methods described above Eg. 
-          `'auto1row'`, `'auto2row'`, or `'auto3row'`Ie. min/max,
-          mean minus/plus 2 std dev, or percentile statistics are 
-          computed across all images in a given row, and those  
-          values are used as the vmin/vmax for all images in that row. 
-          High pass and low pass residuals have independent vmin/vmax
-          based on min/max of the residual image itself.
+        * ``'autoNrow'``: where ``N`` is an integer. each row of the figure 
+          has the same vmin/vmax, which are 
+          computed using the corresponding ``"autoN"`` method described above.
 
-        * `'auto[X]col'`: each column of the figure has the same vmin/vmax, which are 
-          computed using the auto[X] methods described above Eg. 
-          `'auto1col'`, `'auto2col'`, or `'auto3col'`. 
+        * ``'autoNcol'``: where ``N`` is an integer. each column of the figure has the
+          same vmin/vmax, which are computed using the corresponding ``"autoN"`` 
+          method described above.
 
-        * `'auto[X]colcomplex'`: vmin and vmax for each column is computed across both the real
-          and imaginary parts of all images in that column.
+        * ``'autoNcolcomplex'``: where ``N`` is an integer. Same as ``'autoNcol'``, 
+          but the vmin/vmax are computed across the real and imaginary parts in each column.
 
-        * `'indep0'`: each image has an independent vmin/vmax, which have the
+        * ``'indep0'``: each image has an independent vmin/vmax, which have the
           same absolute value, which comes from either their
           minimum or maximum value, whichever has the larger
           absolute value.
 
-        * `'indep1'`: each image has an independent vmin/vmax, which are their
+        * ``'indep1'``: each image has an independent vmin/vmax, which are their
           minimum/maximum values.
 
-        * `'indep2'`: each image has an independent vmin/vmax, which is their
+        * ``'indep2'``: each image has an independent vmin/vmax, which is their
           mean minus/plus 2 std dev.
 
-        * `'indep3'`: each image has an independent vmin/vmax, chosen so that
+        * ``'indep3'``: each image has an independent vmin/vmax, chosen so that
           the 10th/90th percentile values map to the 10th/90th
           percentile intensities.
         
@@ -1043,16 +1027,13 @@ def animshow(video, framerate=2., as_html5=True, repeat=False,
     return anim
 
 
-def pyrshow(pyr_coeffs, is_complex=False, vrange='auto1row', col_wrap=None, zoom=1, show_residuals=True, **kwargs):
+def pyrshow(pyr_coeffs, vrange='auto1row', col_wrap=None, zoom=1, show_residuals=True, **kwargs):
     """Display the coefficients of the pyramid in an orderly fashion
 
     Arguments
     ---------
     pyr_coeffs : `dict`
         from the pyramid object (i.e. pyr.pyr_coeffs)
-    is_complex : `bool`
-        default False, indicates whether the pyramids is real or complex
-        indicating whether the pyramid is complex or real
     vrange : `tuple` or `list` or `str`
 
         .. attention::
@@ -1066,50 +1047,45 @@ def pyrshow(pyr_coeffs, is_complex=False, vrange='auto1row', col_wrap=None, zoom
         minimum/maximum values are specified by the 2-tuples in the list ordered 
         from first image to last. If a string: 
 
-        * `'auto0'`: all images have same vmin/vmax, which have the same absolute
+        * ``'auto0'``: all images have same vmin/vmax, which have the same absolute
           value, and come from the minimum or maximum across all
           images, whichever has the larger absolute value
 
-        * `'auto/auto1'`: all images have same vmin/vmax, which are the
+        * ``'auto/auto1'``: all images have same vmin/vmax, which are the
           minimum/maximum values across all images
 
-        * `'auto2'`: all images have same vmin/vmax, which are the mean (across
+        * ``'auto2'``: all images have same vmin/vmax, which are the mean (across
           all images) minus/ plus 2 std dev (across all images)
 
-        * `'auto3'`: all images have same vmin/vmax, chosen so as to map the
+        * ``'auto3'``: all images have same vmin/vmax, chosen so as to map the
           10th/90th percentile values to the 10th/90th percentile of
           the display intensity range. For example: vmin is the 10th
           percentile image value minus 1/8 times the difference
           between the 90th and 10th percentile
 
-        * `'auto[X]row'`: each row of the figure has the same vmin/vmax, which are 
-          computed using the auto[X] methods described above Eg. 
-          `'auto1row'`, `'auto2row'`, or `'auto3row'`Ie. min/max,
-          mean minus/plus 2 std dev, or percentile statistics are 
-          computed across all images in a given row, and those  
-          values are used as the vmin/vmax for all images in that row. 
-          High pass and low pass residuals have independent vmin/vmax
-          based on min/max of the residual image itself.
+        * ``'autoNrow'``: where ``N`` is an integer. each row of the figure 
+          has the same vmin/vmax, which are 
+          computed using the corresponding ``"autoN"`` method described above.
 
-        * `'auto[X]col'`: each column of the figure has the same vmin/vmax, which are 
-          computed using the auto[X] methods described above Eg. 
-          `'auto1col'`, `'auto2col'`, or `'auto3col'`. 
+        * ``'autoNcol'``: where ``N`` is an integer. each column of the figure has the
+          same vmin/vmax, which are computed using the corresponding ``"autoN"`` 
+          method described above.
 
-        * `'auto[X]colcomplex'`: vmin and vmax for each column is computed across both the real
-          and imaginary parts of all images in that column.
+        * ``'autoNcolcomplex'``: where ``N`` is an integer. Same as ``'autoNcol'``, 
+          but the vmin/vmax are computed across the real and imaginary parts in each column.
 
-        * `'indep0'`: each image has an independent vmin/vmax, which have the
+        * ``'indep0'``: each image has an independent vmin/vmax, which have the
           same absolute value, which comes from either their
           minimum or maximum value, whichever has the larger
           absolute value.
 
-        * `'indep1'`: each image has an independent vmin/vmax, which are their
+        * ``'indep1'``: each image has an independent vmin/vmax, which are their
           minimum/maximum values.
 
-        * `'indep2'`: each image has an independent vmin/vmax, which is their
+        * ``'indep2'``: each image has an independent vmin/vmax, which is their
           mean minus/plus 2 std dev.
 
-        * `'indep3'`: each image has an independent vmin/vmax, chosen so that
+        * ``'indep3'``: each image has an independent vmin/vmax, chosen so that
           the 10th/90th percentile values map to the 10th/90th
           percentile intensities.
         
@@ -1130,7 +1106,7 @@ def pyrshow(pyr_coeffs, is_complex=False, vrange='auto1row', col_wrap=None, zoom
     fig: `PyrFigure`
         the figure displaying the coefficients.
     """
-      # right now, we do *not* do this the same as the old code. Instead of taking the coefficients
+    # right now, we do *not* do this the same as the old code. Instead of taking the coefficients
     # and arranging them in a spiral, we use imshow and arrange them neatly, displaying all at the
     # same size (and zoom / original image size clear), with different options for vrange. It
     # doesn't seem worth it to me to implement a version that looks like the old one, since that
@@ -1143,12 +1119,18 @@ def pyrshow(pyr_coeffs, is_complex=False, vrange='auto1row', col_wrap=None, zoom
     num_scales = np.max(np.asarray([k for k in pyr_coeffs.keys() if isinstance(k, tuple)])[:,0]) + 1
     num_orientations = np.max(np.asarray([k for k in pyr_coeffs.keys() if isinstance(k, tuple)])[:,1]) + 1
 
-    col_wrap_new = num_orientations
-    if is_complex:
-        col_wrap_new *= 2
     # not sure about scope here, so we make sure to copy the
     # pyr_coeffs dictionary.
     imgs, highpass, lowpass = convert_pyr_coeffs_to_pyr(pyr_coeffs.copy())
+
+    # determine if input is complex and if so account for that in column wrap.    
+    if col_wrap is None and num_orientations != 1: 
+        col_wrap = num_orientations
+        for im in imgs:
+            if np.iscomplex(im).any():
+                col_wrap *= 2
+                break 
+
     # we can similarly grab the labels for height and band
     # from the keys in this pyramid coefficients dictionary
     pyr_coeffs_keys = [k for k in pyr_coeffs.keys() if isinstance(k, tuple)]
@@ -1160,9 +1142,7 @@ def pyrshow(pyr_coeffs, is_complex=False, vrange='auto1row', col_wrap=None, zoom
         if lowpass is not None:
             titles += ["residual lowpass"]
             imgs.append(lowpass)
-    if col_wrap_new is not None and col_wrap_new != 1:
-        if col_wrap is None:
-            col_wrap = col_wrap_new
+   
     # if these are really 1d (i.e., have shape (1, x) or (x, 1)), then we want them to be 1d
     imgs = [i.squeeze() for i in imgs]
     if imgs[0].ndim == 1:
